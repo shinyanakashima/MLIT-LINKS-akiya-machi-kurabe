@@ -52,12 +52,17 @@ function main(): void {
     ? readFileSync(originPath, "utf8").trim()
     : "unknown";
 
+  // akiya-pipeline(P5) のスキーマ定義 URL。PIPELINE_REPO で取得元に追随する。
+  const pipelineRepo = process.env.PIPELINE_REPO ?? "shinyanakashima/MLIT-LINKS-akiya-pipeline";
+  const schemaUrl = `https://github.com/${pipelineRepo}/blob/main/schema/akiya-property.schema.json`;
+
   const meta: AggregateMeta = {
     dataset_year: p5.dataset_year ?? DATASET_YEAR,
     schema_version: p5.schema_version ?? "1.0",
     license: p5.license ?? "CC-BY-4.0",
     source_url:
       p5.source_url ?? "https://www.geospatial.jp/ckan/dataset/links-akiyabank-2025",
+    schema_url: schemaUrl,
     data_origin: dataOrigin,
   };
 

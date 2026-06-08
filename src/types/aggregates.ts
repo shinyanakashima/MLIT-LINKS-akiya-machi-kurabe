@@ -96,6 +96,8 @@ export interface AggregateManifest {
   schema_version: string;
   license: string;
   source_url: string;
+  /** akiya-pipeline(P5) のスキーマ定義 URL（バッジのリンク先）。 */
+  schema_url: string;
   /** データの出所: "fixture"（合成サンプル）または "release:<tag>" など。 */
   data_origin: string;
   counts: {

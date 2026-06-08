@@ -66,6 +66,14 @@ a:hover {
 .badge.warn {
   background: var(--warn);
 }
+a.badge-link {
+  color: #fff;
+  text-decoration: none;
+}
+a.badge-link:hover {
+  background: rgba(255, 255, 255, 0.3);
+  text-decoration: underline;
+}
 
 .tabs {
   display: flex;

@@ -8,6 +8,7 @@ const META: AggregateMeta = {
   schema_version: "1.0",
   license: "CC-BY-4.0",
   source_url: "https://example.test",
+  schema_url: "https://example.test/schema.json",
   data_origin: "test",
 };
 

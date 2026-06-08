@@ -32,7 +32,9 @@ function Shell() {
         </p>
         <div className="app-meta">
           <span className="badge">データ: {manifest.dataset_year}年度</span>
-          <span className="badge">P5スキーマ v{manifest.schema_version}</span>
+          <a className="badge badge-link" href={manifest.schema_url} target="_blank" rel="noreferrer">
+            akiya-pipelineスキーマ v{manifest.schema_version}
+          </a>
           <span className="badge">集計 {generated}</span>
           {isFixture ? (
             <span className="badge warn">⚠ 合成サンプルデータ（実データ未取得）</span>
