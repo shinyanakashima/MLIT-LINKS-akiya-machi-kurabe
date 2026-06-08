@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: 型チェック
+        run: npm run lint
+      - name: 集計ロジックの単体テスト
+        run: npm test
+      # 合成サンプルで集計→ビルドが通ることを確認（実データ取得には依存しない）
+      - name: ビルド検証（合成データ）
+        env:
+          USE_FIXTURE: "1"
+        run: npm run build

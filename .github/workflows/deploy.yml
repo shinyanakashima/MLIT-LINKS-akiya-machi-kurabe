@@ -1,0 +1,63 @@
+name: Build & Deploy to GitHub Pages
+
+# P5（パイプライン）の正規化データを取得 → 自治体別に集計 → 静的サイトをビルド → Pages 公開。
+# 集計はビルド時に実行し public/data に焼き込むため、実行時 API は不要。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "取得する P5 リリースタグ（例 data-2025.1.0。空なら latest）"
+        required: false
+        default: ""
+  # 元データは年1更新想定。年次で最新リリースを取り込んで再公開する。
+  schedule:
+    - cron: "0 18 1 4 *" # 毎年 4/1 03:00 JST 付近
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時実行は最新のみ（公開の取り違えを防ぐ）
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # 取得 → 集計 → ビルド（prebuild が fetch+aggregate を実行）
+      - name: Build
+        env:
+          # 同一オーナーの公開リポジトリ（パイプライン）の Releases を読むために使用
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PIPELINE_REPO: shinyanakashima/MLIT-LINKS-akiya-pipeline
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

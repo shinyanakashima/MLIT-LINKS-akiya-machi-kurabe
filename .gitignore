@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+.vite/
+*.tsbuildinfo
+
+# ビルド時に生成される入力・集計成果物（CIで再生成するためコミットしない）
+data/raw/
+public/data/
