@@ -8,6 +8,7 @@ import type {
   PrefectureRollup,
 } from "../types/aggregates.ts";
 import { loadManifest, loadMunicipalities, loadPrefectures } from "./load.ts";
+import { useI18n } from "../i18n/i18n.tsx";
 
 interface StoreState {
   manifest: AggregateManifest;
@@ -19,6 +20,7 @@ interface StoreState {
 const StoreContext = createContext<StoreState | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const [state, setState] = useState<StoreState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,16 +41,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   if (error) {
     return (
       <div className="center-msg">
-        集計データを読み込めません<br />
+        {t("store.error")}<br />
         <span className="note">{error}</span>
-        <p className="note">
-          ローカルでは <code>npm run data</code> で public/data を生成してください。
-        </p>
+        <p className="note">{t("store.errorHint")}</p>
       </div>
     );
   }
   if (!state) {
-    return <div className="center-msg">読み込み中…</div>;
+    return <div className="center-msg">{t("common.loading")}</div>;
   }
   return <StoreContext.Provider value={state}>{children}</StoreContext.Provider>;
 }

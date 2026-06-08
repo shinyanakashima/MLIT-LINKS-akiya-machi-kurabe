@@ -38,6 +38,34 @@ a:hover {
   background: linear-gradient(120deg, #1e3a8a, #2563eb);
   color: #fff;
   padding: 18px 24px 0;
+  position: relative;
+}
+
+.lang-toggle {
+  position: absolute;
+  top: 14px;
+  right: 24px;
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 2px;
+}
+.lang-toggle button {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 3px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.lang-toggle button.active {
+  background: #fff;
+  color: var(--accent);
+  opacity: 1;
+  font-weight: 700;
 }
 .app-header h1 {
   margin: 0;

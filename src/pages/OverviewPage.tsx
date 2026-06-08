@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { useStore } from "../data/store.tsx";
 import type { MunicipalitySummary } from "../types/aggregates.ts";
 import { navigate } from "../lib/router.ts";
-import { scaleBandLabel } from "../lib/labels.ts";
-import { num, pct, yen } from "../lib/format.ts";
+import { num, pct } from "../lib/format.ts";
+import { useI18n, type I18n } from "../i18n/i18n.tsx";
 
 type SortKey =
   | "name"
@@ -16,47 +16,49 @@ type SortKey =
   | "subsidy_mentioned"
   | "vr_tour";
 
+type StringKey = Parameters<I18n["t"]>[0];
+
 interface Column {
   key: SortKey;
-  label: string;
+  labelKey: StringKey;
   left?: boolean;
-  render: (m: MunicipalitySummary) => string;
+  render: (m: MunicipalitySummary, i18n: I18n) => string;
   value: (m: MunicipalitySummary) => number | string;
 }
 
 const COLUMNS: Column[] = [
   {
     key: "name",
-    label: "市区町村",
+    labelKey: "ov.col.name",
     left: true,
     render: (m) => `${m.prefecture} ${m.city}`,
     value: (m) => `${m.prefecture} ${m.city}`,
   },
-  { key: "total", label: "総数", render: (m) => num(m.total), value: (m) => m.total },
-  { key: "registered", label: "登録", render: (m) => num(m.registered), value: (m) => m.registered },
-  { key: "closed", label: "成約", render: (m) => num(m.closed), value: (m) => m.closed },
-  { key: "closed_rate", label: "成約率", render: (m) => pct(m.closed_rate, 1), value: (m) => m.closed_rate },
+  { key: "total", labelKey: "ov.col.total", render: (m) => num(m.total), value: (m) => m.total },
+  { key: "registered", labelKey: "ov.col.registered", render: (m) => num(m.registered), value: (m) => m.registered },
+  { key: "closed", labelKey: "ov.col.closed", render: (m) => num(m.closed), value: (m) => m.closed },
+  { key: "closed_rate", labelKey: "ov.col.closed_rate", render: (m) => pct(m.closed_rate, 1), value: (m) => m.closed_rate },
   {
     key: "median_sale_price_yen",
-    label: "売買中央値",
-    render: (m) => yen(m.median_sale_price_yen),
+    labelKey: "ov.col.median",
+    render: (m, i18n) => i18n.yen(m.median_sale_price_yen),
     value: (m) => m.median_sale_price_yen ?? -1,
   },
   {
     key: "renovation_required",
-    label: "要改修率",
+    labelKey: "ov.col.reno",
     render: (m) => pct(m.tag_rates.renovation_required),
     value: (m) => m.tag_rates.renovation_required,
   },
   {
     key: "subsidy_mentioned",
-    label: "補助金言及率",
+    labelKey: "ov.col.subsidy",
     render: (m) => pct(m.tag_rates.subsidy_mentioned),
     value: (m) => m.tag_rates.subsidy_mentioned,
   },
   {
     key: "vr_tour",
-    label: "VR内覧率",
+    labelKey: "ov.col.vr",
     render: (m) => pct(m.tag_rates.vr_tour),
     value: (m) => m.tag_rates.vr_tour,
   },
@@ -64,6 +66,8 @@ const COLUMNS: Column[] = [
 
 export function OverviewPage() {
   const { municipalities, manifest } = useStore();
+  const i18n = useI18n();
+  const { t } = i18n;
   const [sortKey, setSortKey] = useState<SortKey>("total");
   const [asc, setAsc] = useState(false);
   const [pref, setPref] = useState("");
@@ -105,15 +109,14 @@ export function OverviewPage() {
   return (
     <div>
       <p className="muted">
-        全 {num(manifest.counts.municipalities)} 自治体・{num(manifest.counts.records)} 物件。
-        行をクリックすると自治体の詳細を表示します。「成約率」は登録母数が小さいほど振れやすい点に注意。
+        {t("ov.intro", { muni: num(manifest.counts.municipalities), rec: num(manifest.counts.records) })}
       </p>
 
       <div className="toolbar">
         <label>
-          都道府県
+          {t("ov.f.pref")}
           <select value={pref} onChange={(e) => setPref(e.target.value)}>
-            <option value="">すべて</option>
+            <option value="">{t("ov.all")}</option>
             {prefectures.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -122,27 +125,27 @@ export function OverviewPage() {
           </select>
         </label>
         <label>
-          登録規模
+          {t("ov.f.scale")}
           <select value={band} onChange={(e) => setBand(e.target.value)}>
-            <option value="">すべて</option>
+            <option value="">{t("ov.all")}</option>
             {manifest.scale_bands.map((b) => (
               <option key={b.band} value={b.band}>
-                {b.label}
+                {i18n.scale(b.band)}
               </option>
             ))}
           </select>
         </label>
         <label>
-          市区町村名で検索
+          {t("ov.f.search")}
           <input
             type="search"
-            placeholder="例: 軽井沢"
+            placeholder={t("ov.searchPh")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
         <span className="muted" style={{ marginLeft: "auto", fontSize: "0.82rem" }}>
-          {num(rows.length)} 件表示
+          {t("ov.shown", { n: num(rows.length) })}
         </span>
       </div>
 
@@ -155,13 +158,13 @@ export function OverviewPage() {
                   key={c.key}
                   className={c.left ? "left" : ""}
                   onClick={() => onSort(c.key)}
-                  title="クリックで並び替え"
+                  title={t("ov.sortHint")}
                 >
-                  {c.label}
+                  {t(c.labelKey)}
                   {sortKey === c.key && <span className="arrow"> {asc ? "▲" : "▼"}</span>}
                 </th>
               ))}
-              <th className="left">規模</th>
+              <th className="left">{t("ov.col.scale")}</th>
             </tr>
           </thead>
           <tbody>
@@ -169,11 +172,11 @@ export function OverviewPage() {
               <tr key={m.id} onClick={() => navigate({ name: "municipality", id: m.id })}>
                 {COLUMNS.map((c) => (
                   <td key={c.key} className={c.left ? "left" : ""}>
-                    {c.render(m)}
+                    {c.render(m, i18n)}
                   </td>
                 ))}
                 <td className="left">
-                  <span className="pill">{scaleBandLabel(m.scale_band)}</span>
+                  <span className="pill">{i18n.scale(m.scale_band)}</span>
                 </td>
               </tr>
             ))}

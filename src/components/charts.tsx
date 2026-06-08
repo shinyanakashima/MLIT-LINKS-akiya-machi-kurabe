@@ -14,7 +14,8 @@ import {
   YAxis,
 } from "recharts";
 import type { HistogramBin } from "../types/aggregates.ts";
-import { num, pct } from "../lib/format.ts";
+import { pct } from "../lib/format.ts";
+import { useI18n } from "../i18n/i18n.tsx";
 
 export const PALETTE = [
   "#2563eb",
@@ -43,11 +44,12 @@ export function CompositionPie({
   title: string;
   data: { name: string; value: number }[];
 }) {
+  const { t, count } = useI18n();
   const total = data.reduce((a, b) => a + b.value, 0);
   return (
     <Card title={title}>
       {total === 0 ? (
-        <p className="muted">データなし</p>
+        <p className="muted">{t("chart.nodata")}</p>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
@@ -64,7 +66,7 @@ export function CompositionPie({
                 <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(v: number) => `${num(v)} 件`} />
+            <Tooltip formatter={(v: number) => count(v)} />
           </PieChart>
         </ResponsiveContainer>
       )}
@@ -82,14 +84,16 @@ export function HistogramChart({
   bins: HistogramBin[];
   color?: string;
 }) {
+  const { t, count, band } = useI18n();
   const hasData = bins.some((b) => b.count > 0);
+  const localized = bins.map((b) => ({ ...b, label: band(b.label) }));
   return (
     <Card title={title}>
       {!hasData ? (
-        <p className="muted">データなし</p>
+        <p className="muted">{t("chart.nodata")}</p>
       ) : (
         <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={bins} margin={{ top: 4, right: 8, bottom: 28, left: 0 }}>
+          <BarChart data={localized} margin={{ top: 4, right: 8, bottom: 28, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="label"
@@ -100,7 +104,7 @@ export function HistogramChart({
               tick={{ fontSize: 11 }}
             />
             <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip formatter={(v: number) => `${num(v)} 件`} />
+            <Tooltip formatter={(v: number) => count(v)} />
             <Bar dataKey="count" fill={color} radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
