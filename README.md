@@ -1,122 +1,148 @@
-# 空き家バンク まちくらべ（MLIT-LINKS-akiya-machi-kurabe）
+# 空き家バンク まちくらべ
 
-町ごとの空き家バンクの健全性を**俯瞰・比較**する、自治体向けの静的ダッシュボード。
-国土交通省 Project LINKS「空き家バンク（2025年度）」を、別リポジトリ
-[**MLIT-LINKS-akiya-pipeline（P5）**](https://github.com/shinyanakashima/MLIT-LINKS-akiya-pipeline)
-が正規化した JSON を入力とし、**自治体別に再集計**して可視化する。
+**全国の自治体の「空き家バンク」を、町ごとに俯瞰・比較できる Web ダッシュボード**です。
+国土交通省 Project LINKS が公開する空き家バンクのオープンデータを、自治体（市区町村）単位で
+集計・可視化します。登録数・成約率・価格帯・物件の特徴などを、近隣や同規模の自治体と並べて比較できます。
 
-> MLIT-LINKS-akiya-suryey の後継。正規化は P5 の責務であり、本リポジトリでは**再実装しない**。
-> 集計と描画に専念する。
+🔗 **デモ:** https://shinyanakashima.github.io/MLIT-LINKS-akiya-machi-kurabe/
 
-## ターゲットとユースケース
+> ⚠️ **現在のデータについて**: 元データ（後述のパイプライン）の正式公開が未了のため、
+> デモは**合成サンプルデータ**で動作しています。画面上部に「⚠ 合成サンプルデータ」と表示され、
+> 数値に実質的な意味はありません。実データ公開後はビルドで自動的に置き換わります。
 
-- 自治体の空き家・移住定住担当、地域政策の企画担当
-- 自地域の登録・成約状況を把握し、近隣／類似規模の自治体と比較する
-- 改修要否率・補助金言及率など PR 文由来の指標から施策のヒントを得る
-- 自地域が「どんな型の物件が成約しやすいか」を掴む
+---
 
-## 画面
+## これは何のためのもの？
 
-- **自治体一覧**: 全自治体を表で俯瞰。都道府県・登録規模・名称で絞り込み、各指標で並び替え。
-- **自治体詳細**: 取引種別／用途／築年／価格帯の構成、PR 文 12 タグ率の「同県平均・同規模平均」比較、
-  成約した「型」（額には触れず構成のみ）、改修要否の内訳。
-- **比較ビュー**: 最大 6 自治体を横並び比較。「同県を追加」「同規模を追加」のプリセット付き。
+空き家バンクは多くの自治体が個別に運用しており、「自分の町の登録・成約状況が他と比べてどうなのか」を
+横断的に見る手段がありませんでした。本ツールは、各自治体の担当者や地域政策の企画担当が次のことを行えるよう設計しています。
 
-## アーキテクチャ
+- 自地域の登録・成約状況を把握し、**近隣／類似規模の自治体と比較**する
+- 改修要否率・補助金言及率など、物件 PR 文から得た指標で**施策のヒント**を得る
+- 自地域で「**どんな型の物件が成約しやすいか**」を掴む
+
+想定利用者: 自治体の空き家・移住定住担当、地域政策の企画担当、オープンデータ活用に関心のある開発者・研究者。
+
+## 主な機能
+
+- **自治体一覧** — 全自治体を表で俯瞰。都道府県・登録規模・名称で絞り込み、各指標で並び替え。
+- **自治体詳細** — 取引種別／用途／築年／価格帯の構成、PR 文 12 タグ率の「同県平均・同規模平均」との比較、
+  成約した物件の「型」、改修要否の内訳。
+- **比較ビュー** — 最大 6 自治体を横並びで比較。「同県を追加」「同規模を追加」のワンクリックプリセット付き。
+- **日本語 / 英語の切替** — 画面右上のトグルで全 UI を切替（既定は日本語、選択はブラウザに保存）。
+- **インストール不要** — サーバや DB を持たない静的サイト。ブラウザだけで動作します。
+
+## データの流れ（全体像）
+
+本ツール単体ではデータ収集や正規化を行いません。**別リポジトリのパイプラインが正規化した
+オープンデータを入力**として受け取り、自治体別に再集計して描画することに専念します。
 
 ```
-P5 Releases（正規化済み JSON）
-   └─(ビルド時に取得 fetch-data.mjs)→ data/raw/akiya-2025.json
-        └─(集計 aggregate.ts)→ public/data/*.json（焼き込み）
-             └─(Vite + React + Recharts)→ dist/ → GitHub Pages
+国土交通省 Project LINKS「空き家バンク」オープンデータ
+        │
+        ▼
+ MLIT-LINKS-akiya-pipeline  … データの取得・正規化を担うリポジトリ（本ツールの上流）
+   （正規化済み JSON を GitHub Releases で配布）
+        │  ビルド時に取得（scripts/fetch-data.mjs）
+        ▼
+ MLIT-LINKS-akiya-machi-kurabe（本リポジトリ）
+   集計（scripts/aggregate.ts）→ public/data/*.json として焼き込み
+        │
+        ▼
+ Vite + React + Recharts でビルド → GitHub Pages で公開
 ```
 
-- **実行時 API なし。** 集計はビルド時に実行し `public/data` に静的 JSON として焼き込む。
-- **静的構成（DB 不要）。** GitHub Actions で 取得→集計→ビルド→Pages 公開。
-- 技術: Vite + React + TypeScript + Recharts。
+- 上流パイプライン: [**MLIT-LINKS-akiya-pipeline**](https://github.com/shinyanakashima/MLIT-LINKS-akiya-pipeline)
+  （リポジトリ内では略称 **P5** と表記）。正規化はこのパイプラインの責務であり、**本リポジトリでは再実装しません**。
+- **実行時 API なし** — 集計はビルド時に一度だけ実行し、結果を静的 JSON として `public/data/` に保存します。
+- **データベース不要** — GitHub Actions が「取得 → 集計 → ビルド → 公開」を自動で行います。
 
-### 生成される集計 JSON（`public/data/`）
+### 生成される集計データ（`public/data/`）
 
 | ファイル | 内容 |
 | --- | --- |
 | `manifest.json` | 件数・スキーマ版・出所・ライセンス・規模バンド定義・タグ軸ラベル |
-| `municipalities.json` | 全自治体の軽量サマリ（一覧・比較用） |
+| `municipalities.json` | 全自治体の軽量サマリ（一覧・比較ビュー用） |
 | `municipalities/<id>.json` | 自治体ごとの詳細（築年・価格帯ヒストグラム、成約プロファイル等） |
 | `prefectures.json` | 都道府県ロールアップ（同県平均の基準値） |
 
-集計成果物の型は [`src/types/aggregates.ts`](src/types/aggregates.ts) が正準。
+集計データの型定義は [`src/types/aggregates.ts`](src/types/aggregates.ts) が正準です。
 
-## P5 から取り込むフィールド
+## 元データから使う項目
 
-P5 の正準スキーマ（`schema/akiya-property.schema.json`, `docs/07-output-spec.md`）のうち、
-本アプリが**実際に参照する**のは以下に限られる（型は [`src/types/p5.ts`](src/types/p5.ts)）。
+上流パイプラインが出力する正規化スキーマのうち、本ツールが**実際に参照する**のは以下に限られます
+（型は [`src/types/p5.ts`](src/types/p5.ts)）。
 
 | フィールド | 用途 |
 | --- | --- |
 | `location.prefecture` / `location.city` | 自治体の集計キー |
-| `status`（registered/closed） | 登録／成約の件数・成約率 |
+| `status`（登録 / 成約） | 登録・成約の件数、成約率 |
 | `deal_type` / `use_type` | 取引種別・用途の構成 |
 | `price_yen`（売買） | 価格帯分布・中央値 |
 | `building.construction_year` | 築年分布 |
 | `tags.labels`（12 軸） | 改修要否率・補助金言及率・VR 内覧率などの自治体別集計 |
-| `contract` の有無（額・日は不使用） | 成約した「型」の把握 |
+| `contract` の有無 | 成約した「型」の把握（額・日付は使用しない） |
 
-自由記述系（`utilities` / `facilities` / `nearby_distances` / `land` / `access`）は高欠損のため使わない。
+自由記述系の項目（設備・周辺距離・土地・アクセス等）は欠損が多いため使用しません。
 
-### P5 への要望・既知のギャップ
+## 既知の制約
 
-本アプリの要件のうち、現行 P5 スキーマ（v1.0）では満たせないもの。いずれも元データ由来の制約で、
-P5 の設計でも将来課題と整理されている。
+本ツールの理想に対し、元データの制約で現状できないこと。いずれもデータ由来の制約で、上流パイプラインでも
+将来課題として整理されています。
 
-- **人口データが無い** → 「人口規模での相対比較」が直接はできない。
-  暫定対応として**登録総数を規模の代理指標**（規模バンド xs〜xl）に用いている。
-  本来の人口規模比較には外部の人口統計（e-Stat 等）の付与が必要。これは P5 の責務外。
-- **緯度経度が無い**（`location.point` は常に null） → 「近隣」を地理的距離で測れない。
-  暫定対応として**同一県内**を近接の代理に用いている。地理近接が要件化したら、
-  P5 側に市区町村のジオコーディング（`location.point` の付与）を要望する。
-- **成約日・成約額は高欠損**（〜9 割）→ 仕様どおり**額の分析はしない**。成約は「型」の把握にとどめる。
+- **人口データが無い** → 人口規模での正確な比較ができないため、暫定的に**登録総数を規模の代理指標**
+  （規模バンド XS〜XL）として用いています。本格的な人口規模比較には外部の人口統計（e-Stat 等）の付与が必要です。
+- **緯度経度が無い** → 地理的距離で「近隣」を測れないため、暫定的に**同一県内**を近接の代理として用いています。
+- **成約日・成約額が高欠損**（約 9 割）→ 成約は「型（構成）」の把握にとどめ、**金額の分析は行いません**。
 
-## 開発
+## 開発手順
+
+前提: Node.js 20 以上。
 
 ```bash
 npm install
-npm run dev      # データ生成（or 取得）→ Vite dev server
+npm run dev      # データ生成 → 開発サーバ起動（http://localhost:5173）
 ```
 
-`npm run dev` / `npm run build` は実行前に `npm run data`（取得→集計）を走らせる。
-P5 の正式リリースがまだ無い間は、**P5 スキーマ準拠の合成サンプル**（`scripts/gen-fixture.mjs`、
-決定的）に自動フォールバックし、開発・デモを止めない。ヘッダーに「⚠ 合成サンプルデータ」と表示される。
+`npm run dev` / `npm run build` は実行前に自動でデータを用意します（取得 → 集計）。
+上流の正式リリースがまだ無い間は、**スキーマ準拠の合成サンプル**（`scripts/gen-fixture.mjs`、決定的に生成）に
+自動でフォールバックするため、データが無くても開発・デモを止めません。
+
+| コマンド | 内容 |
+| --- | --- |
+| `npm run data` | 元データ取得（失敗時は合成サンプル）→ 集計して `public/data` へ |
+| `npm run fixture` | 合成サンプルのみ生成 |
+| `npm test` | 集計ロジックの単体テスト |
+| `npm run lint` | 型チェック（`tsc`） |
+| `npm run build` | 本番ビルド（`dist/`） |
+
+### 実データを取得する
+
+`scripts/fetch-data.mjs` が上流パイプラインの GitHub Releases から正規化済み JSON を取得します。
 
 ```bash
-npm run data       # P5 取得（失敗時は合成サンプル）→ 集計を public/data へ
-npm run fixture    # 合成サンプルのみ生成
-npm test           # 集計ロジックの単体テスト
-npm run lint       # 型チェック（tsc）
-npm run build      # 本番ビルド（dist/）
-```
-
-### 実データの取得
-
-`scripts/fetch-data.mjs` が P5 の GitHub Releases から `akiya-<year>.json` / `manifest.json` を取得する。
-
-```bash
-# 特定リリースに固定（推奨運用：本番はタグでピン留め）
+# 特定リリースに固定（本番推奨：タグでピン留め）
 RELEASE_TAG=data-2025.1.0 npm run data
-# 取得を強制せず合成サンプルを使う
+
+# 取得せず合成サンプルを使う
 USE_FIXTURE=1 npm run data
 ```
 
 ## デプロイ（GitHub Pages）
 
-- `.github/workflows/deploy.yml`: `main` への push / 手動 / 年次で、取得→集計→ビルド→Pages 公開。
-- `.github/workflows/ci.yml`: PR / push で 型チェック・テスト・合成データでのビルド検証。
-- Pages のサブパス配信に合わせ `vite.config.ts` の `base` を `/MLIT-LINKS-akiya-machi-kurabe/` に設定。
-  別ホスティングでは `BASE_PATH=/ npm run build` で上書き可。
+- `.github/workflows/deploy.yml` — `main` への push / 手動実行 / 年次スケジュールで、取得 → 集計 → ビルド → Pages 公開。
+- `.github/workflows/ci.yml` — PR・push 時に型チェック・テスト・合成データでのビルド検証。
+- GitHub Pages のサブパス配信に合わせ、`vite.config.ts` の `base` を `/MLIT-LINKS-akiya-machi-kurabe/` に設定しています。
+  別ホスティングへ出す場合は `BASE_PATH=/ npm run build` で上書きできます。
 
-> リポジトリ設定の **Settings → Pages → Build and deployment → Source** を「GitHub Actions」にすること。
+> 初回のみ、リポジトリの **Settings → Pages → Build and deployment → Source** を「GitHub Actions」に設定してください。
 
 ## ライセンス・出典
 
-出典: 国土交通省 Project LINKS「空き家バンク（2025年度）」を加工して作成。
+出典: 国土交通省 Project LINKS「空き家バンク」を加工して作成。
 加工: MLIT-LINKS-akiya-pipeline（正規化）＋ MLIT-LINKS-akiya-machi-kurabe（集計・可視化）。
-ライセンス: **CC-BY 4.0**。詳細は [ATTRIBUTION.md](ATTRIBUTION.md)。
+ライセンス: **CC-BY 4.0**。詳細は [ATTRIBUTION.md](ATTRIBUTION.md) を参照してください。
+
+---
+
+<sub>本リポジトリは旧 `MLIT-LINKS-akiya-survey` の後継です。正規化を上流パイプラインに委ね、集計・可視化に特化しました。</sub>
