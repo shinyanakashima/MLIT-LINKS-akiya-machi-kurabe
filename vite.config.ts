@@ -11,6 +11,9 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    // Recharts は遅延ロード（別チャンク）なので初期ロードには載らない。
+    // 意図的に大きいチャンクなので警告閾値を上げてノイズを抑える。
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {

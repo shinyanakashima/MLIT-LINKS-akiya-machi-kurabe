@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useStore } from "../data/store.tsx";
 import type { MunicipalitySummary } from "../types/aggregates.ts";
 import { navigate } from "../lib/router.ts";
 import { num, pct } from "../lib/format.ts";
-import { PALETTE, TagRateBars } from "../components/charts.tsx";
+import { PALETTE } from "../lib/palette.ts";
+import { TagRateBars } from "../components/charts.lazy.tsx";
 import { useI18n } from "../i18n/i18n.tsx";
 
 const MAX_COMPARE = 6;
@@ -149,7 +150,9 @@ export function ComparePage({ ids }: { ids: string[] }) {
           </div>
 
           <h2 className="section">{t("cmp.sec.tagrates")}</h2>
-          <TagRateBars title="" data={tagData} series={tagSeries} height={460} />
+          <Suspense fallback={<div className="center-msg">{t("common.loading")}</div>}>
+            <TagRateBars title="" data={tagData} series={tagSeries} height={460} />
+          </Suspense>
           <p className="note">{t("cmp.note")}</p>
         </>
       )}

@@ -16,25 +16,8 @@ import {
 import type { HistogramBin } from "../types/aggregates.ts";
 import { pct } from "../lib/format.ts";
 import { useI18n } from "../i18n/i18n.tsx";
-
-export const PALETTE = [
-  "#2563eb",
-  "#16a34a",
-  "#d97706",
-  "#db2777",
-  "#0891b2",
-  "#7c3aed",
-  "#dc2626",
-];
-
-export function Card({ title, children }: { title?: string; children: React.ReactNode }) {
-  return (
-    <div className="card">
-      {title && <p className="chart-title">{title}</p>}
-      {children}
-    </div>
-  );
-}
+import { PALETTE } from "../lib/palette.ts";
+import { Card } from "./Card.tsx";
 
 /** 構成比の円グラフ。 */
 export function CompositionPie({

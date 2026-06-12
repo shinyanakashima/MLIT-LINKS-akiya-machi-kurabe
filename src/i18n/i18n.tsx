@@ -5,6 +5,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ScaleBand, TagRates } from "../types/aggregates.ts";
 import type { DealType, RenovationNeeded, UseType } from "../types/p5.ts";
+import { CONSTRUCTION_BAND_LABELS, PRICE_BAND_LABELS } from "../lib/buckets.ts";
 
 export type Lang = "ja" | "en";
 
@@ -106,6 +107,12 @@ const STRINGS: Record<string, Entry> = {
   "mu.chart.reno": { ja: "改修要否（PR文タグ付き）", en: "Renovation need (PR-tagged)" },
   "mu.card.peers": { ja: "同規模自治体（参考）", en: "Same-scale municipalities (ref)" },
   "mu.peers.note": { ja: "同じ登録規模「{scale}」の自治体は {n} 件。", en: "{n} municipalities at the same listing scale “{scale}”." },
+  "mu.sec.similar": { ja: "特徴が似た自治体", en: "Municipalities with similar characteristics" },
+  "mu.similar.note": {
+    ja: "取引種別・用途の構成、PR文タグ率、築年・価格帯の分布、成約率をベクトル化し、コサイン類似度で近い自治体を提示（規模・県は問わない）。",
+    en: "Nearest municipalities by cosine similarity over deal/use mix, PR-tag rates, construction/price distributions, and closed rate (regardless of scale or prefecture).",
+  },
+  "mu.similar.item": { ja: "{name}（類似度 {score}）", en: "{name} (similarity {score})" },
   "error.detail": { ja: "詳細を読み込めません", en: "Failed to load detail" },
 
   "cmp.intro": {
@@ -182,21 +189,25 @@ const SCALE: Record<ScaleBand, Entry> = {
   xs: { ja: "極小（〜9件）", en: "XS (≤9)" },
 };
 
-// ヒストグラムの帯ラベル（集計成果物では日本語固定なので JA ラベル→EN で対応）
+// ヒストグラムの帯ラベル英訳。JA ラベルは buckets.ts が単一の定義元なので、
+// そこから取り込んだ配列と EN 配列を「定義順（位置）」で対応づける。
+// これにより buckets.ts 側の JA 文言を変えても英訳が静かにズレない。
+// バンド数が変わったら下の長さチェックが実行時に検知する。
+const CONSTRUCTION_BAND_EN = ["–1950", "1951–1970", "1971–1980", "1981–1990", "1991–2000", "2001–2010", "2011–"];
+const PRICE_BAND_EN = ["<¥1M", "¥1–3M", "¥3–5M", "¥5–10M", "¥10–20M", "¥20M+"];
+
+function zipBandLabels(jaLabels: readonly string[], enLabels: readonly string[], kind: string): Record<string, string> {
+  if (jaLabels.length !== enLabels.length) {
+    throw new Error(
+      `i18n: ${kind} バンドの日本語(${jaLabels.length})と英語(${enLabels.length})の数が一致しません。i18n.tsx の EN 配列を buckets.ts の定義に合わせてください。`,
+    );
+  }
+  return Object.fromEntries(jaLabels.map((ja, i) => [ja, enLabels[i]]));
+}
+
 const BAND_EN: Record<string, string> = {
-  "〜1950": "–1950",
-  "1951〜1970": "1951–1970",
-  "1971〜1980": "1971–1980",
-  "1981〜1990": "1981–1990",
-  "1991〜2000": "1991–2000",
-  "2001〜2010": "2001–2010",
-  "2011〜": "2011–",
-  "〜100万円": "<¥1M",
-  "100〜300万円": "¥1–3M",
-  "300〜500万円": "¥3–5M",
-  "500〜1000万円": "¥5–10M",
-  "1000〜2000万円": "¥10–20M",
-  "2000万円〜": "¥20M+",
+  ...zipBandLabels(CONSTRUCTION_BAND_LABELS, CONSTRUCTION_BAND_EN, "築年"),
+  ...zipBandLabels(PRICE_BAND_LABELS, PRICE_BAND_EN, "価格"),
 };
 
 function interpolate(s: string, vars?: Record<string, string | number>): string {

@@ -95,6 +95,27 @@ test("売買価格の中央値とヒストグラムを出す", () => {
   assert.equal(total, 3); // rent は価格ヒストに含めない
 });
 
+test("類似自治体：自分を除き降順、決定的、特徴が近い順", () => {
+  const records: AkiyaRecord[] = [
+    rec({ id: "a1", location: { prefecture: "P", city: "A", point: null }, deal_type: "sale", use_type: "residential" }),
+    rec({ id: "a2", location: { prefecture: "P", city: "A", point: null }, deal_type: "sale", use_type: "residential" }),
+    rec({ id: "b1", location: { prefecture: "P", city: "B", point: null }, deal_type: "sale", use_type: "residential" }),
+    rec({ id: "c1", location: { prefecture: "Q", city: "C", point: null }, deal_type: "rent", use_type: "commercial" }),
+  ];
+  const a = aggregate(records, META);
+  const A = a.details.find((d) => d.city === "A")!;
+  assert.ok(A.similar.length >= 1 && A.similar.length <= 5);
+  assert.ok(!A.similar.some((s) => s.id === A.id)); // 自分を含まない
+  for (let i = 1; i < A.similar.length; i++) {
+    assert.ok(A.similar[i - 1].score >= A.similar[i].score); // 降順
+  }
+  // 居住・売買の A は、同じ構成の B の方が 事業・賃貸の C より似る
+  assert.equal(A.similar[0].city, "B");
+  // 決定的（同じ入力なら同じ出力）
+  const B = aggregate(records, META).details.find((d) => d.city === "A")!;
+  assert.deepEqual(A.similar, B.similar);
+});
+
 test("詳細 ID は決定的で、summary と detail で一致する", () => {
   const records: AkiyaRecord[] = [rec({ id: "1" })];
   const a = aggregate(records, META);

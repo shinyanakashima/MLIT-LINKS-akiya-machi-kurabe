@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useStore } from "../data/store.tsx";
 import { loadMunicipalityDetail } from "../data/load.ts";
 import type { MunicipalityDetail, TagRates } from "../types/aggregates.ts";
 import type { RenovationNeeded } from "../types/p5.ts";
 import { navigate } from "../lib/router.ts";
 import { num, pct, toPieData } from "../lib/format.ts";
-import { Card, CompositionPie, HistogramChart, PALETTE, TagRateBars } from "../components/charts.tsx";
+import { Card } from "../components/Card.tsx";
+import { PALETTE } from "../lib/palette.ts";
+import { CompositionPie, HistogramChart, TagRateBars } from "../components/charts.lazy.tsx";
 import { Kpi } from "../components/Kpi.tsx";
 import { useI18n } from "../i18n/i18n.tsx";
 
@@ -99,6 +101,7 @@ export function MunicipalityPage({ id }: { id: string }) {
         <Kpi label={t("mu.kpi.tagged")} value={i18n.count(detail.tagged)} />
       </div>
 
+      <Suspense fallback={<div className="center-msg">{t("common.loading")}</div>}>
       <h2 className="section">{t("mu.sec.composition")}</h2>
       <div className="grid grid-2">
         <CompositionPie title={t("mu.chart.deal")} data={toPieData(detail.deal_type, i18n.deal)} />
@@ -180,6 +183,23 @@ export function MunicipalityPage({ id }: { id: string }) {
           </div>
         </Card>
       </div>
+      </Suspense>
+
+      {detail.similar.length > 0 && (
+        <>
+          <h2 className="section">{t("mu.sec.similar")}</h2>
+          <p className="muted" style={{ marginTop: 0 }}>
+            {t("mu.similar.note")}
+          </p>
+          <div className="chip-row">
+            {detail.similar.map((s) => (
+              <a key={s.id} className="chip" href={`#/m/${s.id}`}>
+                {t("mu.similar.item", { name: `${s.prefecture} ${s.city}`, score: pct(s.score) })}
+              </a>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

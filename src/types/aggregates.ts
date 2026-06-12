@@ -4,7 +4,7 @@
 import type { RenovationNeeded } from "./p5.ts";
 
 /** 集計版（このアプリの集計ロジックの版）。出力構造を変えたら上げる。 */
-export const AGGREGATE_VERSION = "1.0";
+export const AGGREGATE_VERSION = "1.1";
 
 /** 登録規模バンド（人口データが無いため登録総数を規模の代理指標に使う）。 */
 export type ScaleBand = "xs" | "s" | "m" | "l" | "xl";
@@ -68,12 +68,23 @@ export interface MunicipalitySummary {
   scale_band: ScaleBand;
 }
 
+/** 特徴ベクトルのコサイン類似度で近い自治体（規模・県によらない）。 */
+export interface SimilarMunicipality {
+  id: string;
+  prefecture: string;
+  city: string;
+  /** 類似度 0〜1（1 に近いほど特徴が似る）。 */
+  score: number;
+}
+
 /** 詳細ビュー用。municipalities/<id>.json に1件ずつ入る。 */
 export interface MunicipalityDetail extends MunicipalitySummary {
   construction_year_hist: HistogramBin[];
   sale_price_hist: HistogramBin[];
   renovation_breakdown: Record<RenovationNeeded, number>;
   closed_profile: ClosedProfile;
+  /** 特徴が似た自治体（上位、降順）。 */
+  similar: SimilarMunicipality[];
 }
 
 /** 都道府県ロールアップ（比較の基準値・同県平均）。 */
