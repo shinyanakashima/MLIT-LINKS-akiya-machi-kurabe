@@ -75,6 +75,8 @@
 | `prefectures.json` | 都道府県ロールアップ（同県平均の基準値） |
 
 集計データの型定義は [`src/types/aggregates.ts`](src/types/aggregates.ts) が正準です。
+集計の計算方法（成約率・タグ率の母数、規模バンド、「似た自治体」の判定など）は
+[**docs/ALGORITHM.md**](docs/ALGORITHM.md) を参照してください。
 
 ## 元データから使う項目
 
